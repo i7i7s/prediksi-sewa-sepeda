@@ -459,77 +459,67 @@ with col_right:
         """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
-#  Grafik Time Series — full width di bawah panel
+#  Grafik Time Series — Hanya untuk hasil prediksi simulasi
 # ─────────────────────────────────────────────
-try:
-    import plotly.graph_objects as go
+if st.session_state.pred_history:
+    try:
+        import plotly.graph_objects as go
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("""
-    <div class="section-heading" style="margin-top:1rem;">
-        <span class="step-number">&#9650;</span> Tren Penyewaan Sepeda Harian (Historis &amp; Prediksi)
-    </div>
-    """, unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("""
+        <div class="section-heading" style="margin-top:1rem;">
+            <span class="step-number">📊</span> Perbandingan Tren Hasil Simulasi
+        </div>
+        """, unsafe_allow_html=True)
 
-    df_chart = df[["dteday", "cnt"]].copy()
-
-    fig = go.Figure()
-
-    # Garis historis
-    fig.add_trace(go.Scatter(
-        x=df_chart["dteday"], y=df_chart["cnt"],
-        mode="lines",
-        name="Data Historis",
-        line=dict(color="#94A3B8", width=1.5),
-        hovertemplate="<b>%{x|%d %b %Y}</b><br>Penyewaan: %{y:,.0f}<extra></extra>",
-    ))
-
-    # Titik prediksi dari session state
-    if st.session_state.pred_history:
+        # Urutkan prediksi berdasarkan tanggal agar garisnya runtut
         pred_df = pd.DataFrame(st.session_state.pred_history)
+        pred_df = pred_df.sort_values("date")
+
+        fig = go.Figure()
+
+        # Garis & Titik hasil simulasi
         fig.add_trace(go.Scatter(
             x=pred_df["date"], y=pred_df["cnt"],
-            mode="markers+text",
-            name="Hasil Prediksi",
+            mode="lines+markers+text",
+            name="Hasil Simulasi",
+            line=dict(color="#2563EB", width=3, shape="spline"),
             marker=dict(
-                symbol="star", size=18,
-                color="#1D4ED8",
-                line=dict(color="#1E3A8A", width=1.5)
+                symbol="circle", size=12,
+                color="#FFFFFF",
+                line=dict(color="#2563EB", width=3)
             ),
             text=pred_df["cnt"].apply(lambda x: f"{x:,}".replace(",",".")),
             textposition="top center",
-            textfont=dict(color="#1E3A8A", size=11, family="Inter"),
-            hovertemplate="<b>Prediksi %{x|%b %Y}</b><br>Estimasi: %{y:,.0f}<extra></extra>",
+            textfont=dict(color="#1E3A8A", size=12, family="Inter", weight="bold"),
+            hovertemplate="<b>Skenario: %{x|%B %Y}</b><br>Hasil Prediksi: %{y:,.0f} sewa<extra></extra>",
         ))
 
-    fig.update_layout(
-        plot_bgcolor="#FFFFFF",
-        paper_bgcolor="#FFFFFF",
-        margin=dict(l=10, r=10, t=10, b=10),
-        font=dict(family="Inter", color="#334155"),
-        legend=dict(
-            orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
-            font=dict(size=12),
-        ),
-        xaxis=dict(
-            title=None,
-            gridcolor="#F1F5F9",
-            showline=True, linecolor="#E2E8F0",
-        ),
-        yaxis=dict(
-            title="Jumlah Penyewaan (cnt)",
-            gridcolor="#F1F5F9",
-            showline=True, linecolor="#E2E8F0",
-        ),
-        hovermode="x unified",
-    )
+        fig.update_layout(
+            plot_bgcolor="#F8FAFC",
+            paper_bgcolor="#FFFFFF",
+            margin=dict(l=20, r=20, t=20, b=20),
+            font=dict(family="Inter", color="#334155"),
+            xaxis=dict(
+                title="Bulan Simulasi",
+                gridcolor="#E2E8F0",
+                showline=True, linecolor="#CBD5E1",
+                tickformat="%b %Y",
+            ),
+            yaxis=dict(
+                title="Prediksi Penyewaan (sepeda/hari)",
+                gridcolor="#E2E8F0",
+                showline=True, linecolor="#CBD5E1",
+            ),
+            hovermode="closest",
+        )
 
-    st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)
 
-    if st.session_state.pred_history:
-        if st.button("Hapus Semua Titik Prediksi", type="secondary"):
+        if st.button("Reset Perbandingan / Hapus Semua Titik", type="secondary"):
             st.session_state.pred_history = []
             st.rerun()
 
-except ImportError:
-    st.info("Install `plotly` untuk menampilkan grafik: `pip install plotly`")
+    except ImportError:
+        st.info("Install `plotly` untuk menampilkan grafik: `pip install plotly`")
+
