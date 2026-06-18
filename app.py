@@ -199,12 +199,11 @@ NAMA_CUACA   = {1:"Cerah / Sedikit Berawan",2:"Mendung / Berkabut",3:"Hujan / Sa
 NAMA_WEEKDAY = {0:"Minggu",1:"Senin",2:"Selasa",3:"Rabu",4:"Kamis",5:"Jumat",6:"Sabtu"}
 NAMA_YR      = {0:"2011",1:"2012"}
 
-SEASON_OHE   = {1:"springer",2:"summer",3:"fall",4:"winter"}
-MNTH_OHE     = {1:"jan",2:"feb",3:"mar",4:"apr",5:"may",6:"jun",
-                7:"jul",8:"aug",9:"sep",10:"oct",11:"nov",12:"dec"}
-WEEKDAY_OHE  = {0:"minggu",1:"senin",2:"selasa",3:"rabu",4:"kamis",5:"jumat",6:"sabtu"}
-WEATHER_OHE  = {1:"cerah",2:"mendung",3:"hujan_ringan"}
-MUSIM_BULAN  = {1:4,2:4,3:1,4:1,5:1,6:2,7:2,8:2,9:3,10:3,11:3,12:4}
+# Menyesuaikan dengan nama OHE bahasa Inggris yang digunakan pada model baru
+SEASON_OHE   = {1:"springer", 2:"summer", 3:"fall", 4:"winter"}
+WEEKDAY_OHE  = {0:"sun", 1:"mon", 2:"tue", 3:"wed", 4:"thu", 5:"fri", 6:"sat"}
+WEATHER_OHE  = {1:"clear", 2:"misty", 3:"light_rain_snow"}
+MUSIM_BULAN  = {1:4, 2:4, 3:1, 4:1, 5:1, 6:2, 7:2, 8:2, 9:3, 10:3, 11:3, 12:4}
 
 # ─────────────────────────────────────────────
 #  Load Data & Model
@@ -228,21 +227,27 @@ def load_model():
                 sys.modules['_loss'] = loss_py
             except ImportError:
                 pass
-        return joblib.load("model_bike_sharing.pkl"), None
+        
+        loaded_pkl = joblib.load("model_bike_sharing.pkl")
+        if isinstance(loaded_pkl, dict):
+            # Model baru dibungkus dict dengan key 'model' dan 'features'
+            return loaded_pkl['model'], loaded_pkl['features'], None
+        else:
+            # Fallback jika format lama
+            return loaded_pkl, getattr(loaded_pkl, "feature_names_in_", []), None
     except Exception as e:
-        return None, str(e)
+        return None, [], str(e)
 
-df               = load_data()
-model, model_err = load_model()
+model, FITUR_MODEL, model_err = load_model()
 
 if model_err:
     st.error(f"Gagal memuat model: {model_err}")
     st.stop()
 
-FITUR_MODEL = list(model.feature_names_in_) if hasattr(model, "feature_names_in_") else []
-def modus(s): return s.mode().iloc[0]
+# Load data pendukung
+df = load_data()
 
-def build_input_df(yr, season, mnth, holiday, weekday, workingday, weathersit,
+def build_input_df(yr, season, holiday, weekday, weathersit,
                    temp_norm, hum_norm, wind_norm):
     row = {f: 0 for f in FITUR_MODEL}
     for k, v in [("yr", yr), ("holiday", holiday), ("temp", temp_norm),
@@ -250,7 +255,6 @@ def build_input_df(yr, season, mnth, holiday, weekday, workingday, weathersit,
         if k in row: row[k] = v
     for prefix, mapping, val in [
         ("season",     SEASON_OHE,  season),
-        ("mnth",       MNTH_OHE,    mnth),
         ("weekday",    WEEKDAY_OHE, weekday),
         ("weathersit", WEATHER_OHE, weathersit),
     ]:
@@ -300,13 +304,11 @@ with col_left:
 
     df_bulan        = df[df["mnth"] == bulan_dipilih].copy()
     auto_season     = MUSIM_BULAN[bulan_dipilih]
-    auto_workingday = int(modus(df_bulan["workingday"]))
 
     st.markdown(f"""
     <div class="info-bar">
         Otomatis diatur untuk <b>{NAMA_BULAN[bulan_dipilih]}</b>:<br>
-        Musim: <b>{NAMA_MUSIM[auto_season]}</b> &nbsp;|&nbsp;
-        Hari Kerja Mayoritas: <b>{'Ya' if auto_workingday==1 else 'Tidak'}</b>
+        Musim: <b>{NAMA_MUSIM[auto_season]}</b>
     </div>
     """, unsafe_allow_html=True)
 
@@ -404,7 +406,6 @@ with col_right:
         data_row("Musim",           NAMA_MUSIM[auto_season]),
         data_row("Hari",            NAMA_WEEKDAY[weekday_pilih]),
         data_row("Libur Nasional",  "Ya" if holiday_pilih==1 else "Tidak"),
-        data_row("Hari Kerja",      "Ya" if auto_workingday==1 else "Tidak"),
         data_row("Cuaca",           NAMA_CUACA[weathersit_pilih]),
         data_row("Suhu",            f"{temp_c:.1f} °C"),
         data_row("Kelembapan",      f"{hum_pct} %"),
@@ -417,9 +418,9 @@ with col_right:
     if predict_btn:
         try:
             df_input = build_input_df(
-                yr=yr_pilih, season=auto_season, mnth=bulan_dipilih,
+                yr=yr_pilih, season=auto_season,
                 holiday=holiday_pilih, weekday=weekday_pilih,
-                workingday=auto_workingday, weathersit=weathersit_pilih,
+                weathersit=weathersit_pilih,
                 temp_norm=temp_norm, hum_norm=hum_norm, wind_norm=wind_norm,
             )
 
