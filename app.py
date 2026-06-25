@@ -556,13 +556,11 @@ with st.expander("💡 Insight: Faktor Apa Saja yang Paling Mempengaruhi Prediks
     st.markdown("""
     Berdasarkan analisis *Feature Importance* dari model **Gradient Boosting Regressor** yang kami latih, berikut adalah urutan faktor-faktor yang paling memengaruhi tinggi/rendahnya jumlah penyewaan sepeda:
 
-    1. **Suhu Udara (temp):** Faktor paling krusial. Suhu yang lebih hangat (tapi tidak ekstrem) secara drastis meningkatkan minat menyewa sepeda.
-    2. **Kelembapan Udara (hum):** Kelembapan yang terlalu tinggi menurunkan kenyamanan bersepeda sehingga jumlah sewa menurun.
-    3. **Musim (season):** Terutama **Musim Gugur (Fall)** dan **Musim Panas (Summer)** yang mendatangkan jumlah penyewa terbanyak, berbanding terbalik dengan Musim Semi/Dingin.
-    4. **Kecepatan Angin (windspeed):** Angin kencang berkorelasi dengan penurunan jumlah penyewa.
-    5. **Cuaca Hujan/Salju (weathersit_light_rain_snow):** Kondisi cuaca buruk ini secara instan memangkas prediksi penyewaan hingga lebih dari 60%.
-    6. **Cuaca Berkabut (weathersit_misty):** Berpengaruh negatif pada tingkat sedang dibandingkan saat langit cerah.
-    7. **Hari Libur/Akhir Pekan (holiday / weekday):** Hari kerja menunjukkan pola sewa komuter yang stabil, sementara akhir pekan/libur sangat bergantung pada cerah atau tidaknya cuaca.
-    
-    *Insight ini membuktikan bahwa operasional bisnis persewaan sepeda sangat sensitif terhadap perubahan iklim dan cuaca harian.*
+    1. **Suhu Udara (temp)**
+    2. **Kelembapan Udara (hum)**
+    3. **Musim (season):** season_springer (Musim Semi), season_winter (Musim Dingin)
+    4. **Kecepatan Angin (windspeed)**
+    5. **Cuaca Hujan/Salju (weathersit_light_rain_snow)**
+    6. **Cuaca Berkabut (weathersit_misty)**
+    7. **Hari Libur/Akhir Pekan (holiday / weekday)**
     """)
