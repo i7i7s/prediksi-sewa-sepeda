@@ -433,19 +433,19 @@ with col_right:
                 <div class="result-title">Estimasi Jumlah Penyewaan</div>
                 <div class="result-val">{pred_fmt}</div>
                 <div class="result-desc">
-                    Sepeda / hari &nbsp;·&nbsp;
-                    {NAMA_BULAN[bulan_dipilih]} {NAMA_YR[yr_pilih]} &nbsp;·&nbsp;
+                    Estimasi harian &nbsp;·&nbsp;
+                    Bulan {NAMA_BULAN[bulan_dipilih]} &nbsp;·&nbsp;
                     {NAMA_WEEKDAY[weekday_pilih]}
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-            # Simpan ke riwayat prediksi
-            pred_date = pd.Timestamp(f"{2011 + yr_pilih}-{bulan_dipilih:02d}-15")
+            # Simpan ke riwayat prediksi sebagai Skenario Usaha
+            scenario_idx = len(st.session_state.pred_history) + 1
             st.session_state.pred_history.append({
-                "date":  pred_date,
-                "cnt":   prediksi,
-                "label": f"{NAMA_BULAN[bulan_dipilih][:3]} {NAMA_YR[yr_pilih]}",
+                "scenario": f"Skenario {scenario_idx}",
+                "cnt":      prediksi,
+                "label":    f"{NAMA_BULAN[bulan_dipilih][:3]} ({NAMA_CUACA[weathersit_pilih]})",
             })
 
         except Exception as e:
@@ -473,27 +473,21 @@ if st.session_state.pred_history:
         </div>
         """, unsafe_allow_html=True)
 
-        # Urutkan prediksi berdasarkan tanggal agar garisnya runtut
+        # Gunakan urutan Skenario secara natural
         pred_df = pd.DataFrame(st.session_state.pred_history)
-        pred_df = pred_df.sort_values("date")
 
         fig = go.Figure()
 
-        # Garis & Titik hasil simulasi
-        fig.add_trace(go.Scatter(
-            x=pred_df["date"], y=pred_df["cnt"],
-            mode="lines+markers+text",
-            name="Hasil Simulasi",
-            line=dict(color="#2563EB", width=3, shape="spline"),
-            marker=dict(
-                symbol="circle", size=12,
-                color="#FFFFFF",
-                line=dict(color="#2563EB", width=3)
-            ),
+        # Grafik batang untuk Skenario Bisnis
+        fig.add_trace(go.Bar(
+            x=pred_df["scenario"], y=pred_df["cnt"],
+            name="Estimasi Sewa",
+            marker_color="#2563EB",
             text=pred_df["cnt"].apply(lambda x: f"{x:,}".replace(",",".")),
-            textposition="top center",
-            textfont=dict(color="#1E3A8A", size=12, family="Inter", weight="bold"),
-            hovertemplate="<b>Skenario: %{x|%B %Y}</b><br>Hasil Prediksi: %{y:,.0f} sewa<extra></extra>",
+            textposition="auto",
+            textfont=dict(color="#FFFFFF", size=14, family="Inter", weight="bold"),
+            hovertemplate="<b>%{x}</b><br>Kondisi: %{customdata}<br>Prediksi: %{y:,.0f} sewa<extra></extra>",
+            customdata=pred_df["label"]
         ))
 
         fig.update_layout(
@@ -502,10 +496,9 @@ if st.session_state.pred_history:
             margin=dict(l=20, r=20, t=20, b=20),
             font=dict(family="Inter", color="#334155"),
             xaxis=dict(
-                title="Bulan Simulasi",
+                title="Skenario Prediksi Usaha",
                 gridcolor="#E2E8F0",
                 showline=True, linecolor="#CBD5E1",
-                tickformat="%b %Y",
             ),
             yaxis=dict(
                 title="Prediksi Penyewaan (sepeda/hari)",
