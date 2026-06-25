@@ -442,10 +442,21 @@ with col_right:
 
             # Simpan ke riwayat prediksi sebagai Skenario Usaha
             scenario_idx = len(st.session_state.pred_history) + 1
+            
+            # Menyusun detail aspek untuk ditampilan di Tooltip (Hover Grafik)
+            libur_txt = "Hari Libur" if holiday_pilih == 1 else "Bukan Libur"
+            hover_detail = (
+                f"Bulan: {NAMA_BULAN[bulan_dipilih]}<br>"
+                f"Cuaca: {NAMA_CUACA[weathersit_pilih]}<br>"
+                f"Suhu: {temp_c}°C | Kelembapan: {hum_pct}%<br>"
+                f"Kecepatan Angin: {wind_kmh} km/jam<br>"
+                f"Hari: {NAMA_WEEKDAY[weekday_pilih]} ({libur_txt})"
+            )
+            
             st.session_state.pred_history.append({
                 "scenario": f"Skenario {scenario_idx}",
                 "cnt":      prediksi,
-                "label":    f"{NAMA_BULAN[bulan_dipilih][:3]} ({NAMA_CUACA[weathersit_pilih]})",
+                "label":    hover_detail,
             })
 
         except Exception as e:
@@ -486,7 +497,7 @@ if st.session_state.pred_history:
             text=pred_df["cnt"].apply(lambda x: f"{x:,}".replace(",",".")),
             textposition="auto",
             textfont=dict(color="#FFFFFF", size=14, family="Inter", weight="bold"),
-            hovertemplate="<b>%{x}</b><br>Kondisi: %{customdata}<br>Prediksi: %{y:,.0f} sewa<extra></extra>",
+            hovertemplate="<b style='font-size:15px'>%{x}</b><br><br>%{customdata}<br><br><b style='font-size:14px; color:#FDE047;'>Estimasi: %{y:,.0f} sewa</b><extra></extra>",
             customdata=pred_df["label"]
         ))
 
