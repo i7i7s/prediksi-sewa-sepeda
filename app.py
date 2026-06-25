@@ -370,20 +370,21 @@ with col_left:
     </div>
     """, unsafe_allow_html=True)
 
+    yr_pilih = 1  # Dikunci ke tahun 2012 (yr=1) sesuai instruksi tim
+
     c1, c2 = st.columns(2)
     with c1:
-        yr_pilih = st.selectbox("Tahun:", options=[0,1], format_func=lambda x: NAMA_YR[x], index=1)
+        weekday_pilih = st.selectbox(
+            "Hari dalam Seminggu:",
+            options=list(NAMA_WEEKDAY.keys()),
+            format_func=lambda x: NAMA_WEEKDAY[x], index=3
+        )
     with c2:
         holiday_pilih = st.selectbox(
             "Status Libur:", options=[0,1],
             format_func=lambda x: "Bukan Libur" if x==0 else "Hari Libur Nasional",
             index=0
         )
-    weekday_pilih = st.selectbox(
-        "Hari dalam Seminggu:",
-        options=list(NAMA_WEEKDAY.keys()),
-        format_func=lambda x: NAMA_WEEKDAY[x], index=3
-    )
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -401,7 +402,6 @@ with col_right:
                 f'<span class="sheet-value">{val}</span></div>')
 
     rows_html = "".join([
-        data_row("Tahun",           NAMA_YR[yr_pilih]),
         data_row("Bulan",           NAMA_BULAN[bulan_dipilih]),
         data_row("Musim",           NAMA_MUSIM[auto_season]),
         data_row("Hari",            NAMA_WEEKDAY[weekday_pilih]),
