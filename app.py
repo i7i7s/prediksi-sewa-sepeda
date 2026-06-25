@@ -10,6 +10,8 @@ import pandas as pd
 import numpy as np
 import joblib
 import warnings
+import json
+import os
 
 warnings.filterwarnings("ignore")
 
@@ -263,10 +265,19 @@ def build_input_df(yr, season, holiday, weekday, weathersit,
     return pd.DataFrame([row])[FITUR_MODEL]
 
 # ─────────────────────────────────────────────
-#  Session State — simpan riwayat prediksi
+#  Session State — simpan riwayat prediksi (Cached)
 # ─────────────────────────────────────────────
+CACHE_FILE = "cache_scenarios.json"
+
 if "pred_history" not in st.session_state:
-    st.session_state.pred_history = []
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, "r") as f:
+                st.session_state.pred_history = json.load(f)
+        except Exception:
+            st.session_state.pred_history = []
+    else:
+        st.session_state.pred_history = []
 
 # ─────────────────────────────────────────────
 #  Header
@@ -458,6 +469,13 @@ with col_right:
                 "cnt":      prediksi,
                 "label":    hover_detail,
             })
+            
+            # Simpan state ke file agar tidak hilang saat di-refresh
+            try:
+                with open(CACHE_FILE, "w") as f:
+                    json.dump(st.session_state.pred_history, f)
+            except Exception:
+                pass
 
         except Exception as e:
             st.error(f"Gagal memproses model: {e}")
@@ -521,10 +539,30 @@ if st.session_state.pred_history:
 
         st.plotly_chart(fig, use_container_width=True)
 
-        if st.button("Reset Perbandingan / Hapus Semua Titik", type="secondary"):
+        if st.button("Reset Perbandingan / Hapus Semua Skenario", type="secondary"):
             st.session_state.pred_history = []
+            if os.path.exists(CACHE_FILE):
+                os.remove(CACHE_FILE)
             st.rerun()
 
     except ImportError:
         st.info("Install `plotly` untuk menampilkan grafik: `pip install plotly`")
 
+# ─────────────────────────────────────────────
+#  Insight: Faktor Penentu Utama (Feature Importance)
+# ─────────────────────────────────────────────
+st.markdown("<br>", unsafe_allow_html=True)
+with st.expander("💡 Insight: Faktor Apa Saja yang Paling Mempengaruhi Prediksi?", expanded=False):
+    st.markdown("""
+    Berdasarkan analisis *Feature Importance* dari model **Gradient Boosting Regressor** yang kami latih, berikut adalah urutan faktor-faktor yang paling memengaruhi tinggi/rendahnya jumlah penyewaan sepeda:
+
+    1. **Suhu Udara (temp):** Faktor paling krusial. Suhu yang lebih hangat (tapi tidak ekstrem) secara drastis meningkatkan minat menyewa sepeda.
+    2. **Kelembapan Udara (hum):** Kelembapan yang terlalu tinggi menurunkan kenyamanan bersepeda sehingga jumlah sewa menurun.
+    3. **Musim (season):** Terutama **Musim Gugur (Fall)** dan **Musim Panas (Summer)** yang mendatangkan jumlah penyewa terbanyak, berbanding terbalik dengan Musim Semi/Dingin.
+    4. **Kecepatan Angin (windspeed):** Angin kencang berkorelasi dengan penurunan jumlah penyewa.
+    5. **Cuaca Hujan/Salju (weathersit_light_rain_snow):** Kondisi cuaca buruk ini secara instan memangkas prediksi penyewaan hingga lebih dari 60%.
+    6. **Cuaca Berkabut (weathersit_misty):** Berpengaruh negatif pada tingkat sedang dibandingkan saat langit cerah.
+    7. **Hari Libur/Akhir Pekan (holiday / weekday):** Hari kerja menunjukkan pola sewa komuter yang stabil, sementara akhir pekan/libur sangat bergantung pada cerah atau tidaknya cuaca.
+    
+    *Insight ini membuktikan bahwa operasional bisnis persewaan sepeda sangat sensitif terhadap perubahan iklim dan cuaca harian.*
+    """)
